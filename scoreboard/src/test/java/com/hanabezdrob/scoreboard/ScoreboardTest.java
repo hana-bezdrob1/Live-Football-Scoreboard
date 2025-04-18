@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ScoreboardTest {
     @Test
@@ -71,5 +72,15 @@ public class ScoreboardTest {
         final var summary = scoreboard.getSummary();
         assertThat(summary).hasSize(3);
         assertThat(summary).containsExactly(thirdMatch, secondMatch, firstMatch);
+    }
+
+    @Test
+    void updateScore_nonExistentMatch_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        final Match ghost = new Match("USA", "UK");
+
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(ghost, new Score(1, 0)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Match not found");
     }
 }
