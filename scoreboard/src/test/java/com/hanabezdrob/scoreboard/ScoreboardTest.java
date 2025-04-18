@@ -83,4 +83,14 @@ public class ScoreboardTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Match not found");
     }
+
+    @Test
+    void updateScore_negativeScore_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
+
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(-1, 2)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Scores may not be negative");
+    }
 }
