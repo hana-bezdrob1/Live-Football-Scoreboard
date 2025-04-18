@@ -1,6 +1,5 @@
 package com.hanabezdrob.scoreboard;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,11 +30,11 @@ public class Scoreboard {
      */
     public Match startMatch(final String homeTeam, final String awayTeam) {
         if (matches.stream().anyMatch(m -> m.homeTeam().equals(homeTeam) || m.awayTeam().equals(homeTeam))) {
-            throw new IllegalStateException(MessageFormat.format("Team {0} has a match in progress", homeTeam));
+            throw new IllegalStateException(String.format("Team %s has a match in progress", homeTeam));
         }
 
         if (matches.stream().anyMatch(m -> m.homeTeam().equals(awayTeam) || m.awayTeam().equals(awayTeam))) {
-            throw new IllegalStateException(MessageFormat.format("Team {0} has a match in progress", awayTeam));
+            throw new IllegalStateException(String.format("Team %s has a match in progress", awayTeam));
         }
         final Match match = new Match(homeTeam, awayTeam);
         matches.add(match);
@@ -65,14 +64,14 @@ public class Scoreboard {
 
         if (score.home() > MAX_SCORE || score.away() > MAX_SCORE) {
             throw new IllegalArgumentException(
-                    MessageFormat.format("Score {0} exceeds maximum allowed score", score)
+                    String.format("Score %s exceeds maximum allowed score", score)
             );
         }
 
         if (score.home() - match.getHomeScore() > MAX_DELTA || score.away() - match.getAwayScore() > MAX_DELTA) {
             throw new IllegalArgumentException(
-                    MessageFormat.format(
-                            "Score increase from {0} to {1} exceeds maximum score increase",
+                    String.format(
+                            "Score increase from %s to %s exceeds maximum score increase",
                             match.score(),
                             score
                     )

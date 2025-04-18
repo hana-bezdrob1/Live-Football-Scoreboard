@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import static com.hanabezdrob.scoreboard.Scoreboard.MAX_SCORE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ScoreboardTest {
     @Test
@@ -135,6 +136,43 @@ public class ScoreboardTest {
     }
 
     @Test
+    void updateMatchScore_sameScore_noOp() {
+        final Scoreboard scoreboard = new Scoreboard();
+        final Match match = scoreboard.startMatch("Germany", "Spain");
+        final Score originalScore = match.score();
+        final Match result = scoreboard.updateMatchScore(match, originalScore);
+
+        assertThat(result).isSameAs(match);
+        assertThat(scoreboard.getMatchesInProgress()).containsExactly(match);
+    }
+
+    @Test
+    void updateMatchScore_atMaxScore_allowed() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Latvia", "Italy");
+        match = scoreboard.updateMatchScore(match, new Score(5, 0));
+        match = scoreboard.updateMatchScore(match, new Score(10, 0));
+        match = scoreboard.updateMatchScore(match, new Score(15, 0));
+        match = scoreboard.updateMatchScore(match, new Score(20, 0));
+        match = scoreboard.updateMatchScore(match, new Score(25, 0));
+        // update home to MAX_SCORE
+        final Match updated = scoreboard.updateMatchScore(match, new Score(Scoreboard.MAX_SCORE, 0));
+        assertThat(updated.score().home()).isEqualTo(Scoreboard.MAX_SCORE);
+    }
+
+    @Test
+    void updateMatchScore_atMaxDelta_allowed() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Latvia", "Italy");
+        // first bump to some baseline
+        match = scoreboard.updateMatchScore(match, new Score(2, 1));
+        // then bump by exactly MAX_DELTA
+        final Score bump = new Score(2 + Scoreboard.MAX_DELTA, 1);
+        final Match updated = scoreboard.updateMatchScore(match, bump);
+        assertThat(updated.score()).isEqualTo(bump);
+    }
+
+    @Test
     void finishMatch_shouldRemoveMatchFromScoreboard() {
         final Scoreboard scoreboard = new Scoreboard();
         final Match firstMatch = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
@@ -154,6 +192,14 @@ public class ScoreboardTest {
     }
 
     @Test
+    void finishMatch_nullIgnored() {
+        final Scoreboard scoreboard = new Scoreboard();
+        final Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Sweden");
+        scoreboard.finishMatch(null);
+        assertThat(scoreboard.getMatchesInProgress()).containsExactly(match);
+    }
+
+    @Test
     void getSummary_shouldOrderByScoreDesc_thenByStartTimeDesc() throws InterruptedException {
         final Scoreboard scoreboard = new Scoreboard();
         Match firstMatch = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
@@ -170,6 +216,46 @@ public class ScoreboardTest {
         final var summary = scoreboard.getSummary();
         assertThat(summary).hasSize(3);
         assertThat(summary).containsExactly(thirdMatch, secondMatch, firstMatch);
+    }
+
+    @Test
+    void getSummary_noMatches_returnsEmptyList() {
+        final Scoreboard scoreboard = new Scoreboard();
+        assertThat(scoreboard.getSummary()).isEmpty();
+    }
+
+    @Test
+    void getMatchesInProgress_onModification_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        scoreboard.startMatch("Germany", "Spain");
+        final List<Match> list = scoreboard.getMatchesInProgress();
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> list.add(new Match("X","Y")));
+    }
+
+    @Test
+    void largeSequence_ofOperations_maintainsCorrectness() {
+        final Scoreboard scoreboard = new Scoreboard();
+
+        Match firstMatch = scoreboard.startMatch("Bosnia and Herzegovina","Croatia");
+        firstMatch = scoreboard.updateMatchScore(firstMatch, new Score(1,1));
+
+        Match secondMatch = scoreboard.startMatch("Serbia","Italy");
+        secondMatch = scoreboard.updateMatchScore(secondMatch, new Score(2,0));
+
+        scoreboard.finishMatch(firstMatch);
+        assertThat(scoreboard.getMatchesInProgress()).containsExactly(secondMatch);
+
+        Match thirdMatch = scoreboard.startMatch("Bosnia and Herzegovina","Spain");
+        thirdMatch = scoreboard.updateMatchScore(thirdMatch, new Score(3,2));
+
+        // thirdMatch (total = 5) then secondMatch (total = 2)
+        final List<Match> summary = scoreboard.getSummary();
+        assertThat(summary).containsExactly(thirdMatch, secondMatch);
+
+        scoreboard.finishMatch(secondMatch);
+        scoreboard.finishMatch(thirdMatch);
+        assertThat(scoreboard.getMatchesInProgress()).isEmpty();
     }
 
     static Stream<Arguments> invalidTeamNamesProvider() {
