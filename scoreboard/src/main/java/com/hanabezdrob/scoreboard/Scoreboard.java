@@ -23,6 +23,10 @@ public class Scoreboard {
         }
     }
 
+    public void finishMatch(final Match match) {
+        matches.remove(match);
+    }
+
     public List<Match> getMatchesInProgress() {
         return Collections.unmodifiableList(matches);
     }
