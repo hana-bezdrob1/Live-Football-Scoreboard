@@ -80,8 +80,8 @@ public class ScoreboardTest {
         final Match ghost = new Match("USA", "UK");
 
         assertThatThrownBy(() -> scoreboard.updateMatchScore(ghost, new Score(1, 0)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Match not found");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Match not found");
     }
 
     @Test
@@ -92,5 +92,14 @@ public class ScoreboardTest {
         assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(-1, 2)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Scores may not be negative");
+    }
+
+    @Test
+    void startMatch_teamPlayWithItself_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+
+        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Bosnia and Herzegovina"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Home and away team must be different");
     }
 }
