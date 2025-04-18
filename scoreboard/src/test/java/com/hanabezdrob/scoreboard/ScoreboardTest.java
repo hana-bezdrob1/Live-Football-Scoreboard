@@ -117,19 +117,28 @@ public class ScoreboardTest {
                 .hasMessageContaining("must not be blank");
     }
 
+    @Test
+    void startMatch_nullTeamName_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+
+        assertThatThrownBy(() -> scoreboard.startMatch(null, "Team"))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("must not be null");
+    }
+
     static Stream<Arguments> invalidTeamNamesProvider() {
         return Stream.of(
                 // homeTeam invalid, awayTeam valid
-                org.junit.jupiter.params.provider.Arguments.of("", "TeamB"),
-                org.junit.jupiter.params.provider.Arguments.of("   ", "TeamB"),
+                Arguments.of("", "TeamB"),
+                Arguments.of("   ", "TeamB"),
 
                 // homeTeam valid, awayTeam invalid
-                org.junit.jupiter.params.provider.Arguments.of("TeamA", ""),
-                org.junit.jupiter.params.provider.Arguments.of("TeamA", "   "),
+                Arguments.of("TeamA", ""),
+                Arguments.of("TeamA", "   "),
 
                 // both invalid at once
-                org.junit.jupiter.params.provider.Arguments.of("", ""),
-                org.junit.jupiter.params.provider.Arguments.of("   ", "   ")
+                Arguments.of("", ""),
+                Arguments.of("   ", "   ")
         );
     }
 }
