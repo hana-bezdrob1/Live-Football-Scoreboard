@@ -13,9 +13,23 @@ public class ScoreboardTest {
 
         final var matches = scoreboard.getMatchesInProgress();
         assertThat(matches).hasSize(1);
-        assertThat(matches.getFirst().getHomeTeam()).isEqualTo("Bosnia and Herzegovina");
-        assertThat(matches.getFirst().getAwayTeam()).isEqualTo("Norway");
-        assertThat(matches.getFirst().getHomeScore()).isZero();
-        assertThat(matches.getFirst().getAwayScore()).isZero();
+
+        final Match stored  = matches.getFirst();
+        assertThat(stored.homeTeam()).isEqualTo("Bosnia and Herzegovina");
+        assertThat(stored.awayTeam()).isEqualTo("Norway");
+        assertThat(stored.getHomeScore()).isZero();
+        assertThat(stored.getAwayScore()).isZero();
+    }
+
+    @Test
+    void updateMatch_shouldUpdateExistingMatchScore() {
+        final Scoreboard scoreboard = new Scoreboard();
+        final Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
+
+        scoreboard.updateMatchScore(match, new Score(1, 0));
+
+        final Match updatedMatch = scoreboard.getMatchesInProgress().getFirst();
+        assertThat(updatedMatch.getHomeScore()).isEqualTo(1);
+        assertThat(updatedMatch.getAwayScore()).isEqualTo(0);
     }
 }
