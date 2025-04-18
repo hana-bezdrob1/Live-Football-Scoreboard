@@ -135,6 +135,18 @@ public class ScoreboardTest {
                 .hasMessageContaining("has a match in progress");
     }
 
+    @Test
+    void updateMatchScore_scoreLowering_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Bosnia", "Norway");
+        match = scoreboard.updateMatchScore(match, new Score(1, 0));
+
+        final Match finalMatch = match;
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(0, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Scores may not go down during a game");
+    }
+
     static Stream<Arguments> invalidTeamNamesProvider() {
         return Stream.of(
                 // homeTeam invalid, awayTeam valid
