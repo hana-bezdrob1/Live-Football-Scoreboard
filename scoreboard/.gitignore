@@ -1,0 +1,23 @@
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+target
+out
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+
+# Compiled class file
+*.class
+
+# Log file
+*.log
+*.log*
+
+### Mac OS ###
+.DS_Store
