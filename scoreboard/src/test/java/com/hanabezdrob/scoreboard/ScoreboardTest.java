@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.hanabezdrob.scoreboard.Scoreboard.MAX_SCORE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -138,13 +139,37 @@ public class ScoreboardTest {
     @Test
     void updateMatchScore_scoreLowering_shouldThrowException() {
         final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Bosnia", "Norway");
+        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
         match = scoreboard.updateMatchScore(match, new Score(1, 0));
 
         final Match finalMatch = match;
         assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(0, 0)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Scores may not go down during a game");
+    }
+
+    @Test
+    void updateMatchScore_aboveOverallMax_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Croatia");
+
+        // try to set home score to 31 (> MAX_SCORE)
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(MAX_SCORE + 1, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("exceeds maximum allowed score");
+    }
+
+    @Test
+    void updateMatchScore_deltaExceedsMax_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Egypt", "Colombia");
+        match = scoreboard.updateMatchScore(match, new Score(5, 0));
+
+        // now try to jump from 5 to 20 (> MAX_DELTA)
+        final Match finalMatch = match;
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(20, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("exceeds maximum score increase");
     }
 
     static Stream<Arguments> invalidTeamNamesProvider() {

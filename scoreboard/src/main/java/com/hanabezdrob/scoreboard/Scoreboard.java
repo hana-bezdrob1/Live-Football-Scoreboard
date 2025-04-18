@@ -7,6 +7,9 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Scoreboard {
+    public static final int MAX_SCORE = 30;
+    public static final int MAX_DELTA = 5;
+
     private final List<Match> matches = new ArrayList<>();
 
     public Match startMatch(final String homeTeam, final String awayTeam) {
