@@ -126,6 +126,15 @@ public class ScoreboardTest {
                 .hasMessageContaining("must not be null");
     }
 
+    @Test
+    void startMatch_duplicateTeamName_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        scoreboard.startMatch("Bosnia and Herzegovina", "Serbia");
+        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Croatia"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("One or both teams already have a match in progress.");
+    }
+
     static Stream<Arguments> invalidTeamNamesProvider() {
         return Stream.of(
                 // homeTeam invalid, awayTeam valid
