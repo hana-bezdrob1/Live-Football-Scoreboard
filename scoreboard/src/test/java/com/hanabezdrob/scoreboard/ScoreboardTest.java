@@ -1,8 +1,12 @@
 package com.hanabezdrob.scoreboard;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -101,5 +105,31 @@ public class ScoreboardTest {
         assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Bosnia and Herzegovina"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Home and away team must be different");
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidTeamNamesProvider")
+    void startMatch_invalidTeamNames_shouldThrowException(final String homeTeam, final String awayTeam) {
+        final Scoreboard scoreboard = new Scoreboard();
+
+        assertThatThrownBy(() -> scoreboard.startMatch(homeTeam, awayTeam))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must not be blank");
+    }
+
+    static Stream<Arguments> invalidTeamNamesProvider() {
+        return Stream.of(
+                // homeTeam invalid, awayTeam valid
+                org.junit.jupiter.params.provider.Arguments.of("", "TeamB"),
+                org.junit.jupiter.params.provider.Arguments.of("   ", "TeamB"),
+
+                // homeTeam valid, awayTeam invalid
+                org.junit.jupiter.params.provider.Arguments.of("TeamA", ""),
+                org.junit.jupiter.params.provider.Arguments.of("TeamA", "   "),
+
+                // both invalid at once
+                org.junit.jupiter.params.provider.Arguments.of("", ""),
+                org.junit.jupiter.params.provider.Arguments.of("   ", "   ")
+        );
     }
 }
