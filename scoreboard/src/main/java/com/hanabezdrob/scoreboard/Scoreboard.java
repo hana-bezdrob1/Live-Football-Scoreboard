@@ -1,5 +1,6 @@
 package com.hanabezdrob.scoreboard;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -9,6 +10,13 @@ public class Scoreboard {
     private final List<Match> matches = new ArrayList<>();
 
     public Match startMatch(final String homeTeam, final String awayTeam) {
+        if (matches.stream().anyMatch(m -> m.homeTeam().equals(homeTeam) || m.awayTeam().equals(homeTeam))) {
+            throw new IllegalStateException(MessageFormat.format("Team {0} has a match in progress", homeTeam));
+        }
+
+        if (matches.stream().anyMatch(m -> m.homeTeam().equals(awayTeam) || m.awayTeam().equals(awayTeam))) {
+            throw new IllegalStateException(MessageFormat.format("Team {0} has a match in progress", awayTeam));
+        }
         final Match match = new Match(homeTeam, awayTeam);
         matches.add(match);
 

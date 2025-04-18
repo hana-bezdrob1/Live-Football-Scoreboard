@@ -132,7 +132,7 @@ public class ScoreboardTest {
         scoreboard.startMatch("Bosnia and Herzegovina", "Serbia");
         assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Croatia"))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("One or both teams already have a match in progress.");
+                .hasMessageContaining("has a match in progress");
     }
 
     static Stream<Arguments> invalidTeamNamesProvider() {
