@@ -9,6 +9,10 @@ public class Scoreboard {
     private final List<Match> matches = new ArrayList<>();
 
     public Match startMatch(final String homeTeam, final String awayTeam) {
+        if (homeTeam.equals(awayTeam)) {
+            throw new IllegalArgumentException("Home and away team must be different");
+        }
+
         final Match match = new Match(homeTeam, awayTeam);
         matches.add(match);
 
