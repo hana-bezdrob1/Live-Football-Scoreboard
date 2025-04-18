@@ -57,21 +57,19 @@ public class ScoreboardTest {
     @Test
     void getSummary_shouldOrderByScoreDesc_thenByStartTimeDesc() throws InterruptedException {
         final Scoreboard scoreboard = new Scoreboard();
-        final Match firstMatch = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
-        scoreboard.updateMatchScore(firstMatch, new Score(1, 0));
+        Match firstMatch = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
+        firstMatch = scoreboard.updateMatchScore(firstMatch, new Score(1, 0));
 
         Thread.sleep(50); // pause so match start times are different
 
-        final Match secondMatch = scoreboard.startMatch("Croatia", "Mexico");
-        scoreboard.updateMatchScore(secondMatch, new Score(1, 0));
+        Match secondMatch = scoreboard.startMatch("Croatia", "Mexico");
+        secondMatch = scoreboard.updateMatchScore(secondMatch, new Score(1, 0));
 
-        final Match thirdMatch = scoreboard.startMatch("Germany", "Spain");
-        scoreboard.updateMatchScore(thirdMatch, new Score(2, 3));
+        Match thirdMatch = scoreboard.startMatch("Germany", "Spain");
+        thirdMatch = scoreboard.updateMatchScore(thirdMatch, new Score(2, 3));
 
         final var summary = scoreboard.getSummary();
         assertThat(summary).hasSize(3);
-        assertThat(summary.getFirst()).isSameAs(thirdMatch);
-        assertThat(summary.get(1)).isSameAs(secondMatch);
-        assertThat(summary.get(2)).isSameAs(firstMatch);
+        assertThat(summary).containsExactly(thirdMatch, secondMatch, firstMatch);
     }
 }
