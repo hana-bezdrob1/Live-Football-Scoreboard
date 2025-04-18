@@ -40,6 +40,22 @@ public class Scoreboard {
             throw new IllegalArgumentException("Scores may not go down during a game");
         }
 
+        if (score.home() > MAX_SCORE || score.away() > MAX_SCORE) {
+            throw new IllegalArgumentException(
+                    MessageFormat.format("Score {0} exceeds maximum allowed score", score)
+            );
+        }
+
+        if (score.home() - match.getHomeScore() > MAX_DELTA || score.away() - match.getAwayScore() > MAX_DELTA) {
+            throw new IllegalArgumentException(
+                    MessageFormat.format(
+                            "Score increase from {0} to {1} exceeds maximum score increase",
+                            match.score(),
+                            score
+                    )
+            );
+        }
+
         final Match updated = new Match(match.homeTeam(), match.awayTeam(), score, match.startTime());
         matches.set(idx, updated);
 
