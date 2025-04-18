@@ -29,6 +29,14 @@ public class Scoreboard {
             throw new IllegalArgumentException("Match not found");
         }
 
+        if (score.equals(match.score())) {
+            return match;
+        }
+
+        if (match.getHomeScore() > score.home() || match.getAwayScore() > score.away()) {
+            throw new IllegalArgumentException("Scores may not go down during a game");
+        }
+
         final Match updated = new Match(match.homeTeam(), match.awayTeam(), score, match.startTime());
         matches.set(idx, updated);
 
