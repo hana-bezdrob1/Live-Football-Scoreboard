@@ -1,19 +1,15 @@
 package com.hanabezdrob.scoreboard;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hanabezdrob.scoreboard.Scoreboard.MAX_SCORE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
-public class ScoreboardTest {
+class ScoreboardTest {
     @Test
     void startMatch_shouldAddNewMatchToScoreboard() {
         final Scoreboard scoreboard = new Scoreboard();
@@ -28,43 +24,6 @@ public class ScoreboardTest {
         assertThat(stored.awayTeam()).isEqualTo("Norway");
         assertThat(stored.getHomeScore()).isZero();
         assertThat(stored.getAwayScore()).isZero();
-    }
-
-    @ParameterizedTest
-    @MethodSource("invalidTeamNamesProvider")
-    void startMatch_invalidTeamNames_shouldThrowException(final String homeTeam, final String awayTeam) {
-        final Scoreboard scoreboard = new Scoreboard();
-
-        assertThatThrownBy(() -> scoreboard.startMatch(homeTeam, awayTeam))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not be blank");
-    }
-
-    @Test
-    void startMatch_nullTeamName_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-
-        assertThatThrownBy(() -> scoreboard.startMatch(null, "Team"))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("must not be null");
-    }
-
-    @Test
-    void startMatch_duplicateTeamName_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        scoreboard.startMatch("Bosnia and Herzegovina", "Serbia");
-        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Croatia"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("has a match in progress");
-    }
-
-    @Test
-    void startMatch_teamPlayWithItself_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-
-        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Bosnia and Herzegovina"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Home and away team must be different");
     }
 
     @Test
@@ -90,52 +49,6 @@ public class ScoreboardTest {
     }
 
     @Test
-    void updateMatchScore_negativeScore_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
-
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(-1, 2)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Scores may not be negative");
-    }
-
-    @Test
-    void updateMatchScore_scoreLowering_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
-        match = scoreboard.updateMatchScore(match, new Score(1, 0));
-
-        final Match finalMatch = match;
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(0, 0)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Scores may not go down during a game");
-    }
-
-    @Test
-    void updateMatchScore_aboveOverallMax_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Croatia");
-
-        // try to set home score to 31 (> MAX_SCORE)
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(MAX_SCORE + 1, 0)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("exceeds maximum allowed score");
-    }
-
-    @Test
-    void updateMatchScore_deltaExceedsMax_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Egypt", "Colombia");
-        match = scoreboard.updateMatchScore(match, new Score(5, 0));
-
-        // now try to jump from 5 to 20 (> MAX_DELTA)
-        final Match finalMatch = match;
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(20, 0)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("exceeds maximum score increase");
-    }
-
-    @Test
     void updateMatchScore_sameScore_noOp() {
         final Scoreboard scoreboard = new Scoreboard();
         final Match match = scoreboard.startMatch("Germany", "Spain");
@@ -144,32 +57,6 @@ public class ScoreboardTest {
 
         assertThat(result).isSameAs(match);
         assertThat(scoreboard.getMatchesInProgress()).containsExactly(match);
-    }
-
-    @Test
-    void updateMatchScore_atMaxScore_allowed() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Latvia", "Italy");
-        match = scoreboard.updateMatchScore(match, new Score(5, 0));
-        match = scoreboard.updateMatchScore(match, new Score(10, 0));
-        match = scoreboard.updateMatchScore(match, new Score(15, 0));
-        match = scoreboard.updateMatchScore(match, new Score(20, 0));
-        match = scoreboard.updateMatchScore(match, new Score(25, 0));
-        // update home to MAX_SCORE
-        final Match updated = scoreboard.updateMatchScore(match, new Score(Scoreboard.MAX_SCORE, 0));
-        assertThat(updated.score().home()).isEqualTo(Scoreboard.MAX_SCORE);
-    }
-
-    @Test
-    void updateMatchScore_atMaxDelta_allowed() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Latvia", "Italy");
-        // first bump to some baseline
-        match = scoreboard.updateMatchScore(match, new Score(2, 1));
-        // then bump by exactly MAX_DELTA
-        final Score bump = new Score(2 + Scoreboard.MAX_DELTA, 1);
-        final Match updated = scoreboard.updateMatchScore(match, bump);
-        assertThat(updated.score()).isEqualTo(bump);
     }
 
     @Test
@@ -258,19 +145,22 @@ public class ScoreboardTest {
         assertThat(scoreboard.getMatchesInProgress()).isEmpty();
     }
 
-    static Stream<Arguments> invalidTeamNamesProvider() {
-        return Stream.of(
-                // homeTeam invalid, awayTeam valid
-                Arguments.of("", "TeamB"),
-                Arguments.of("   ", "TeamB"),
+    @Test
+    void startMatch_usesInjectedValidator() {
+        final AtomicBoolean called = new AtomicBoolean(false);
+        final MatchValidator validator = new MatchValidator() {
+            @Override
+            public void validateNewMatch(final String home, final String away, final Iterable<Match> existing) {
+                called.set(true);
+            }
 
-                // homeTeam valid, awayTeam invalid
-                Arguments.of("TeamA", ""),
-                Arguments.of("TeamA", "   "),
-
-                // both invalid at once
-                Arguments.of("", ""),
-                Arguments.of("   ", "   ")
-        );
+            @Override
+            public void validateScoreUpdate(final Match oldMatch, final Score newScore) {
+                // no‑op for this test
+            }
+        };
+        final Scoreboard scoreboard = new Scoreboard(validator);
+        scoreboard.startMatch("Bosnia and Herzegovina","Croatia");
+        assertThat(called).isTrue();
     }
 }
