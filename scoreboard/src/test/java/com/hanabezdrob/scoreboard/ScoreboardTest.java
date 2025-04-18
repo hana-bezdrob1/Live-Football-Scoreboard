@@ -39,7 +39,7 @@ public class ScoreboardTest {
     void finishMatch_shouldRemoveMatchFromScoreboard() {
         final Scoreboard scoreboard = new Scoreboard();
         final Match firstMatch = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
-        final Match secondMatch = scoreboard.startMatch("Spain", "Mexico");
+        final Match secondMatch = scoreboard.startMatch("Croatia", "Mexico");
 
         assertThat(scoreboard.getMatchesInProgress()).hasSize(2);
 
@@ -52,5 +52,26 @@ public class ScoreboardTest {
         // Ensure that trying to complete a non-existent match will not do anything.
         scoreboard.finishMatch(firstMatch);
         assertThat(scoreboard.getMatchesInProgress()).hasSize(1);
+    }
+
+    @Test
+    void getSummary_shouldOrderByScoreDesc_thenByStartTimeDesc() throws InterruptedException {
+        final Scoreboard scoreboard = new Scoreboard();
+        final Match firstMatch = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
+        scoreboard.updateMatchScore(firstMatch, new Score(1, 0));
+
+        Thread.sleep(50); // pause so match start times are different
+
+        final Match secondMatch = scoreboard.startMatch("Croatia", "Mexico");
+        scoreboard.updateMatchScore(secondMatch, new Score(1, 0));
+
+        final Match thirdMatch = scoreboard.startMatch("Germany", "Spain");
+        scoreboard.updateMatchScore(thirdMatch, new Score(2, 3));
+
+        final var summary = scoreboard.getSummary();
+        assertThat(summary).hasSize(3);
+        assertThat(summary.getFirst()).isSameAs(thirdMatch);
+        assertThat(summary.get(1)).isSameAs(secondMatch);
+        assertThat(summary.get(2)).isSameAs(firstMatch);
     }
 }
