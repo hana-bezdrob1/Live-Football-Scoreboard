@@ -29,8 +29,45 @@ public class ScoreboardTest {
         assertThat(stored.getAwayScore()).isZero();
     }
 
+    @ParameterizedTest
+    @MethodSource("invalidTeamNamesProvider")
+    void startMatch_invalidTeamNames_shouldThrowException(final String homeTeam, final String awayTeam) {
+        final Scoreboard scoreboard = new Scoreboard();
+
+        assertThatThrownBy(() -> scoreboard.startMatch(homeTeam, awayTeam))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must not be blank");
+    }
+
     @Test
-    void updateMatch_shouldUpdateExistingMatchScore() {
+    void startMatch_nullTeamName_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+
+        assertThatThrownBy(() -> scoreboard.startMatch(null, "Team"))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("must not be null");
+    }
+
+    @Test
+    void startMatch_duplicateTeamName_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        scoreboard.startMatch("Bosnia and Herzegovina", "Serbia");
+        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Croatia"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("has a match in progress");
+    }
+
+    @Test
+    void startMatch_teamPlayWithItself_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+
+        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Bosnia and Herzegovina"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Home and away team must be different");
+    }
+
+    @Test
+    void updateMatchScore_shouldUpdateExistingMatchScore() {
         final Scoreboard scoreboard = new Scoreboard();
         final Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
 
@@ -39,6 +76,62 @@ public class ScoreboardTest {
         final Match updatedMatch = scoreboard.getMatchesInProgress().getFirst();
         assertThat(updatedMatch.getHomeScore()).isEqualTo(1);
         assertThat(updatedMatch.getAwayScore()).isEqualTo(0);
+    }
+
+    @Test
+    void updateMatchScore_nonExistentMatch_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        final Match ghost = new Match("USA", "UK");
+
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(ghost, new Score(1, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Match not found");
+    }
+
+    @Test
+    void updateMatchScore_negativeScore_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
+
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(-1, 2)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Scores may not be negative");
+    }
+
+    @Test
+    void updateMatchScore_scoreLowering_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
+        match = scoreboard.updateMatchScore(match, new Score(1, 0));
+
+        final Match finalMatch = match;
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(0, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Scores may not go down during a game");
+    }
+
+    @Test
+    void updateMatchScore_aboveOverallMax_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Croatia");
+
+        // try to set home score to 31 (> MAX_SCORE)
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(MAX_SCORE + 1, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("exceeds maximum allowed score");
+    }
+
+    @Test
+    void updateMatchScore_deltaExceedsMax_shouldThrowException() {
+        final Scoreboard scoreboard = new Scoreboard();
+        Match match = scoreboard.startMatch("Egypt", "Colombia");
+        match = scoreboard.updateMatchScore(match, new Score(5, 0));
+
+        // now try to jump from 5 to 20 (> MAX_DELTA)
+        final Match finalMatch = match;
+        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(20, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("exceeds maximum score increase");
     }
 
     @Test
@@ -77,99 +170,6 @@ public class ScoreboardTest {
         final var summary = scoreboard.getSummary();
         assertThat(summary).hasSize(3);
         assertThat(summary).containsExactly(thirdMatch, secondMatch, firstMatch);
-    }
-
-    @Test
-    void updateScore_nonExistentMatch_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        final Match ghost = new Match("USA", "UK");
-
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(ghost, new Score(1, 0)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Match not found");
-    }
-
-    @Test
-    void updateScore_negativeScore_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
-
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(-1, 2)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Scores may not be negative");
-    }
-
-    @Test
-    void startMatch_teamPlayWithItself_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-
-        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Bosnia and Herzegovina"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Home and away team must be different");
-    }
-
-    @ParameterizedTest
-    @MethodSource("invalidTeamNamesProvider")
-    void startMatch_invalidTeamNames_shouldThrowException(final String homeTeam, final String awayTeam) {
-        final Scoreboard scoreboard = new Scoreboard();
-
-        assertThatThrownBy(() -> scoreboard.startMatch(homeTeam, awayTeam))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must not be blank");
-    }
-
-    @Test
-    void startMatch_nullTeamName_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-
-        assertThatThrownBy(() -> scoreboard.startMatch(null, "Team"))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("must not be null");
-    }
-
-    @Test
-    void startMatch_duplicateTeamName_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        scoreboard.startMatch("Bosnia and Herzegovina", "Serbia");
-        assertThatThrownBy(() -> scoreboard.startMatch("Bosnia and Herzegovina", "Croatia"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("has a match in progress");
-    }
-
-    @Test
-    void updateMatchScore_scoreLowering_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Norway");
-        match = scoreboard.updateMatchScore(match, new Score(1, 0));
-
-        final Match finalMatch = match;
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(0, 0)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Scores may not go down during a game");
-    }
-
-    @Test
-    void updateMatchScore_aboveOverallMax_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Bosnia and Herzegovina", "Croatia");
-
-        // try to set home score to 31 (> MAX_SCORE)
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(match, new Score(MAX_SCORE + 1, 0)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("exceeds maximum allowed score");
-    }
-
-    @Test
-    void updateMatchScore_deltaExceedsMax_shouldThrowException() {
-        final Scoreboard scoreboard = new Scoreboard();
-        Match match = scoreboard.startMatch("Egypt", "Colombia");
-        match = scoreboard.updateMatchScore(match, new Score(5, 0));
-
-        // now try to jump from 5 to 20 (> MAX_DELTA)
-        final Match finalMatch = match;
-        assertThatThrownBy(() -> scoreboard.updateMatchScore(finalMatch, new Score(20, 0)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("exceeds maximum score increase");
     }
 
     static Stream<Arguments> invalidTeamNamesProvider() {

@@ -6,12 +6,29 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Manages the lifecycle of live football matches: start, update, finish, and summary printing.
+ *
+ * <p>Enforces:
+ * <ul>
+ *   <li>Single live match per team</li>
+ *   <li>Scores non‑decreasing, within MAX_DELTA per update</li>
+ *   <li>Scores less or equal to MAX_SCORE</li>
+ * </ul>
+ * </p>
+ */
 public class Scoreboard {
     public static final int MAX_SCORE = 30;
     public static final int MAX_DELTA = 5;
 
     private final List<Match> matches = new ArrayList<>();
 
+    /**
+     * Starts a new 0–0 match. Throws if either team is already playing or has invalid names.
+     *
+     * @throws IllegalStateException if homeTeam or awayTeam already has a match in progress
+     * @throws IllegalArgumentException or NullPointerException for invalid names
+     */
     public Match startMatch(final String homeTeam, final String awayTeam) {
         if (matches.stream().anyMatch(m -> m.homeTeam().equals(homeTeam) || m.awayTeam().equals(homeTeam))) {
             throw new IllegalStateException(MessageFormat.format("Team {0} has a match in progress", homeTeam));
@@ -26,6 +43,12 @@ public class Scoreboard {
         return match;
     }
 
+    /**
+     * Updates the {@code match} score, returning a new Match.
+     *
+     * @throws IllegalArgumentException if match is not found, scores go down,
+     * MAX_SCORE is exceeded, or scores jump by more than MAX_DELTA
+     */
     public Match updateMatchScore(final Match match, final Score score) {
         int idx = matches.indexOf(match);
         if (idx < 0) {
@@ -62,10 +85,12 @@ public class Scoreboard {
         return updated;
     }
 
+    /** Removes the match - does nothing if match is not found. */
     public void finishMatch(final Match match) {
         matches.remove(match);
     }
 
+    /** @return unmodifiable list of live matches ordered by total goals desc, then startTime desc. */
     public List<Match> getSummary() {
         return matches.stream()
                 .sorted(Comparator
@@ -75,6 +100,7 @@ public class Scoreboard {
                 .toList();
     }
 
+    /** @return unmodifiable list of matches in progress. */
     public List<Match> getMatchesInProgress() {
         return Collections.unmodifiableList(matches);
     }
