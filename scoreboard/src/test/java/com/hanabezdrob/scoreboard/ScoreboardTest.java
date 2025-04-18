@@ -13,9 +13,9 @@ public class ScoreboardTest {
 
         final var matches = scoreboard.getMatchesInProgress();
         assertThat(matches).hasSize(1);
-        assertThat(matches.get(0).getHomeTeam()).isEqualTo("Bosnia and Herzegovina");
-        assertThat(matches.get(0).getAwayTeam()).isEqualTo("Norway");
-        assertThat(matches.get(0).getHomeScore()).isZero();
-        assertThat(matches.get(0).getAwayScore()).isZero();
+        assertThat(matches.getFirst().getHomeTeam()).isEqualTo("Bosnia and Herzegovina");
+        assertThat(matches.getFirst().getAwayTeam()).isEqualTo("Norway");
+        assertThat(matches.getFirst().getHomeScore()).isZero();
+        assertThat(matches.getFirst().getAwayScore()).isZero();
     }
 }
